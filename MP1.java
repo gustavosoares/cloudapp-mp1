@@ -12,6 +12,7 @@ public class MP1 {
     Random generator;
     String userName;
     String inputFileName;
+    Map<String, Integer> frequencies = new HashMap<String, Integer>();
     String delimiters = " \t,;.?!-:@[](){}_*/";
     String[] stopWordsArray = {"i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you", "your", "yours",
             "yourself", "yourselves", "he", "him", "his", "himself", "she", "her", "hers", "herself", "it", "its",
@@ -56,8 +57,17 @@ public class MP1 {
     private void processLine(String line) {
         StringTokenizer st = new StringTokenizer(line.toLowerCase(), delimiters=this.delimiters);
         while (st.hasMoreTokens()) {
-            System.out.println(st.nextToken());
+            String token = st.nextToken().trim();
+            if (! Arrays.asList(this.stopWordsArray).contains(token) ) {
+                if (this.frequencies.containsKey(token)) {
+                    int count = this.frequencies.get(token);
+                    this.frequencies.put(token, count + 1);
+                } else {
+                    this.frequencies.put(token, 1);
+                }
+            }
         }
+
     }
 
     public String[] process() throws Exception {
@@ -77,7 +87,21 @@ public class MP1 {
                 // Print the content on the console
                 this.processLine(strLine);
             }
+
+            this.frequencies = sortByValue(this.frequencies);
+            //System.out.println(this.frequencies);
+
+            int i = 0;
+            for (String key: this.frequencies.keySet()) {
+                ret[i] = key;
+                i = i + 1;
+                if (i > (ret.length - 1)){
+                    break;
+                }
+            }
+
         } catch (Exception e) {
+            e.printStackTrace();
             System.err.println(e);
         } finally {
             //Close the input stream
@@ -89,6 +113,28 @@ public class MP1 {
 
 
         return ret;
+    }
+
+    public static <K, V extends Comparable<? super V>> Map<K, V>
+    sortByValue( Map<K, V> map )
+    {
+        List<Map.Entry<K, V>> list =
+                new LinkedList<>( map.entrySet() );
+        Collections.sort( list, new Comparator<Map.Entry<K, V>>()
+        {
+            @Override
+            public int compare( Map.Entry<K, V> o1, Map.Entry<K, V> o2 )
+            {
+                return (o2.getValue()).compareTo( o1.getValue() );
+            }
+        } );
+
+        Map<K, V> result = new LinkedHashMap<>();
+        for (Map.Entry<K, V> entry : list)
+        {
+            result.put( entry.getKey(), entry.getValue() );
+        }
+        return result;
     }
 
     public static void main(String[] args) throws Exception {
