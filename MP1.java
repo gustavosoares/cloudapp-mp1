@@ -1,5 +1,9 @@
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Array;
+import java.rmi.server.ExportException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -49,10 +53,40 @@ public class MP1 {
         this.inputFileName = inputFileName;
     }
 
+    private void processLine(String line) {
+        StringTokenizer st = new StringTokenizer(line.toLowerCase(), delimiters=this.delimiters);
+        while (st.hasMoreTokens()) {
+            System.out.println(st.nextToken());
+        }
+    }
+
     public String[] process() throws Exception {
         String[] ret = new String[20];
        
         //TODO
+        // Open the file
+        BufferedReader br = null;
+        try {
+            FileInputStream fstream = new FileInputStream(this.inputFileName);
+            br = new BufferedReader(new InputStreamReader(fstream));
+
+            String strLine;
+
+            //Read File Line By Line
+            while ((strLine = br.readLine()) != null)   {
+                // Print the content on the console
+                this.processLine(strLine);
+            }
+        } catch (Exception e) {
+            System.err.println(e);
+        } finally {
+            //Close the input stream
+            if (br != null) {
+                try {
+                    br.close();
+                } catch(Throwable t) { /* ensure close happens */ } }
+        }
+
 
         return ret;
     }
