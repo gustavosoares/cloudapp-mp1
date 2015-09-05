@@ -1,9 +1,4 @@
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
-import java.lang.reflect.Array;
-import java.rmi.server.ExportException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -12,7 +7,6 @@ public class MP1 {
     Random generator;
     String userName;
     String inputFileName;
-    Map<String, Integer> frequencies = new HashMap<String, Integer>();
     String delimiters = " \t,;.?!-:@[](){}_*/";
     String[] stopWordsArray = {"i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you", "your", "yours",
             "yourself", "yourselves", "he", "him", "his", "himself", "she", "her", "hers", "herself", "it", "its",
@@ -54,47 +48,57 @@ public class MP1 {
         this.inputFileName = inputFileName;
     }
 
-    private void processLine(String line) {
-        StringTokenizer st = new StringTokenizer(line.toLowerCase(), delimiters=this.delimiters);
-        while (st.hasMoreTokens()) {
-            String token = st.nextToken().trim();
-            if (! Arrays.asList(this.stopWordsArray).contains(token) ) {
-                if (this.frequencies.containsKey(token)) {
-                    int count = this.frequencies.get(token);
-                    this.frequencies.put(token, count + 1);
-                } else {
-                    this.frequencies.put(token, 1);
-                }
-            }
-        }
-
-    }
-
     public String[] process() throws Exception {
         String[] ret = new String[20];
-       
-        //TODO
+
+        List<String> lines = new ArrayList<String>();
+        Map<String, Integer> wordCountMap = new HashMap<String, Integer>();
+
         // Open the file
-        BufferedReader br = null;
+        Scanner fileScanner = null;
         try {
-            FileInputStream fstream = new FileInputStream(this.inputFileName);
-            br = new BufferedReader(new InputStreamReader(fstream));
+            File file = new File(this.inputFileName);
+            fileScanner = new Scanner(file);
+            int count = 0; int nProcLines = 0; int freqLine = 0;
+            Integer[] indexes = this.getIndexes();
 
-            String strLine;
-
-            //Read File Line By Line
-            while ((strLine = br.readLine()) != null)   {
-                // Print the content on the console
-                this.processLine(strLine);
+            //read file
+            while (fileScanner.hasNextLine()) {
+                count++;
+                String strLine = fileScanner.nextLine();
+                strLine = strLine.toLowerCase().trim();
+                lines.add(strLine);
             }
 
-            this.frequencies = sortByValue(this.frequencies);
-            //System.out.println(this.frequencies);
+            for (Integer index : indexes) {
+                //get the line
+                String line = lines.get(index);
+                StringTokenizer st = new StringTokenizer(line, delimiters=this.delimiters);
+
+                while (st.hasMoreTokens()) {
+                    String token = st.nextToken();
+                    if (! Arrays.asList(this.stopWordsArray).contains(token) ) {
+                        if (wordCountMap.containsKey(token)) {
+                            int freq = wordCountMap.get(token);
+                            wordCountMap.put(token, freq + 1);
+                        } else {
+                            wordCountMap.put(token, 1);
+                        }
+                    }
+                }
+            }
+
+            //sort
+            wordCountMap = sortByValue(wordCountMap);
+
+            Map<String, Integer> wordsCountSortedLexicographilyMap = sortByValue(wordCountMap);
+//            System.out.println(this.wordCountMap);
+//            System.out.println("-------------------------");
 
             int i = 0;
-            for (String key: this.frequencies.keySet()) {
+            for (String key: wordsCountSortedLexicographilyMap.keySet()) {
                 ret[i] = key;
-                i = i + 1;
+                i++;
                 if (i > (ret.length - 1)){
                     break;
                 }
@@ -104,38 +108,48 @@ public class MP1 {
             e.printStackTrace();
             System.err.println(e);
         } finally {
+            fileScanner.close();
             //Close the input stream
-            if (br != null) {
-                try {
-                    br.close();
-                } catch(Throwable t) { /* ensure close happens */ } }
+//            if (br != null) {
+//                try {
+//                    br.close();
+//                } catch(Throwable t) { /* ensure close happens */ } }
         }
 
 
         return ret;
     }
 
-    public static <K, V extends Comparable<? super V>> Map<K, V>
-    sortByValue( Map<K, V> map )
-    {
-        List<Map.Entry<K, V>> list =
-                new LinkedList<>( map.entrySet() );
-        Collections.sort( list, new Comparator<Map.Entry<K, V>>()
-        {
-            @Override
-            public int compare( Map.Entry<K, V> o1, Map.Entry<K, V> o2 )
-            {
-                return (o2.getValue()).compareTo( o1.getValue() );
-            }
-        } );
+    private static Map<String, Integer> sortByValue(Map<String, Integer> unsortMap) {
 
-        Map<K, V> result = new LinkedHashMap<>();
-        for (Map.Entry<K, V> entry : list)
-        {
-            result.put( entry.getKey(), entry.getValue() );
+        // Convert Map to List
+        List<Map.Entry<String, Integer>> list = new LinkedList<Map.Entry<String, Integer>>(unsortMap.entrySet());
+
+        // Sort list with comparator, to compare the Map values
+        Collections.sort(list, new Comparator<Map.Entry<String, Integer>>() {
+
+            public int compare(Map.Entry<String, Integer> o1, Map.Entry<String, Integer> o2) {
+
+                int compResult = o2.getValue().compareTo(o1.getValue());
+
+                //lexico
+                if(compResult == 0)
+                    return o1.getKey().compareTo(o2.toString());
+
+                return compResult;
+
+            }
+        });
+
+        // Convert sorted map back to a Map
+        Map<String, Integer> sortedMap = new LinkedHashMap<String, Integer>();
+        for (Iterator<Map.Entry<String, Integer>> it = list.iterator(); it.hasNext();) {
+            Map.Entry<String, Integer> entry = it.next();
+            sortedMap.put(entry.getKey(), entry.getValue());
         }
-        return result;
+        return sortedMap;
     }
+
 
     public static void main(String[] args) throws Exception {
         if (args.length < 1){
