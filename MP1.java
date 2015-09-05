@@ -59,12 +59,10 @@ public class MP1 {
         try {
             File file = new File(this.inputFileName);
             fileScanner = new Scanner(file);
-            int count = 0; int nProcLines = 0; int freqLine = 0;
             Integer[] indexes = this.getIndexes();
 
             //read file
             while (fileScanner.hasNextLine()) {
-                count++;
                 String strLine = fileScanner.nextLine();
                 strLine = strLine.toLowerCase().trim();
                 lines.add(strLine);
@@ -109,11 +107,6 @@ public class MP1 {
             System.err.println(e);
         } finally {
             fileScanner.close();
-            //Close the input stream
-//            if (br != null) {
-//                try {
-//                    br.close();
-//                } catch(Throwable t) { /* ensure close happens */ } }
         }
 
 
